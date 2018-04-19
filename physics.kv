@@ -1,0 +1,50 @@
+#:import Window kivy.core.window.Window
+<Ball>:
+    canvas:
+        Ellipse:
+    		size: self.size
+            pos: self.pos
+
+<Ground>:
+	canvas:
+		Rectangle:
+			pos: self.pos
+			size: self.size
+	
+<Platform>:
+	canvas:
+		Rectangle:
+			pos: self.pos
+			size: self.size
+
+<Arrow>:
+	canvas:
+		Line:
+			points: self._points
+			width: 2
+		Color:
+			rgba: 1, 1, 1, .5
+
+<ProjectileGame>:
+	ball: white_ball
+	ground: base_ground
+	plaform: small_platform
+	arrow: pointing_arrow
+	on_touch_down: self.save_pos_if_ball_touched(*args)
+	on_touch_move: self.show_arrow_if_ball_was_touched(*args)
+	on_touch_up: self.remove_arrow_and_kick_if_ball_was_touched(*args)
+
+	Ball:
+		id: white_ball
+		
+	Ground:
+		id: base_ground
+
+	Platform:
+		id: small_platform
+
+	Arrow:
+		id: pointing_arrow
+
+
+

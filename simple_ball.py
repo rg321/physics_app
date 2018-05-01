@@ -9,10 +9,10 @@ from functools import partial
 from time import time
 from helper_functions import unit_vector
 from vector import Vector
-from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.instructions import *
 
 
-DELTA = (3, 3)
+DELTA = (0.055, 0.055)
 INTERVAL = 1.0 / 100.0 # larger D means more calls to function
 G_FACTOR = -2
 
@@ -23,8 +23,9 @@ transitions = [
         'source': 'lying_on_ground',
         'dest': 'in_air',
         'before': 'store_ball_position',
-        'after': 'move_the_ball',
-        'conditions': ['is_ball_touched']
+        'after': 'move_the_ball'
+        # 'after': 'move_the_ball',
+        # 'conditions': ['is_ball_touched']
     },
     { 
         'trigger': 'collide',
@@ -38,6 +39,7 @@ class ProjectileGame(Widget):
 		ball = ObjectProperty(None)
 		platform = ObjectProperty(None)
 		arrow = ObjectProperty(None)
+		line_instruction = Instruction()
 		line_instruction_group = InstructionGroup()
 
 		def save_pos_if_ball_touched(self, *args):
@@ -52,29 +54,38 @@ class ProjectileGame(Widget):
 				self.draw_arrow(ball_touched_at, touch, self.ball.centre)
 
 		def draw_arrow(self, ball_touched_at, touch, ball_centre):
-			present_touch = touch[0].pos
-			print 'ball_touched_at, present_touch, ball_centre', ball_touched_at, present_touch, ball_centre
+			present_touch = touch[1].pos
+			# print 'touch', touch
+			print 'ball_touched_at, present_touch', ball_touched_at, present_touch
 			touch_vector = Vector(*present_touch) - Vector(*ball_touched_at)
 			print 'touch_vector', touch_vector
 			touch_vector_inversed = touch_vector.inverse()
 			# touch_vector_inversed = touch_vector
 			arrow_length_vector = unit_vector(touch_vector_inversed.norm(), touch_vector_inversed.argument())
+			# self.ball.velocity_unit_vector = unit_vector(1, touch_vector_inversed.argument())
+			self.ball.velocity_unit_vector = arrow_length_vector
 			arrow_ending_vector = arrow_length_vector + ball_centre
 			# with self.arrow.canvas:
 			print 'drawing arrow', ball_centre, arrow_ending_vector.values
 			# print 'touch', touch.ud
 			# touch[0].arrow._points = (ball_centre, arrow_ending_vector.values)
 			line_points = (ball_centre, arrow_ending_vector.values)
-			line_instruction = Line(points=line_points)
-			self.line_instruction_group.add(line_instruction)
-			self.arrow.canvas.add(self.line_instruction_group)
+			self.line_instruction = Line(points=line_points, group='arrows')
+			# self.line_instruction_group.add(self.line_instruction)
+			self.arrow.canvas.clear()
+			self.arrow.canvas.add(self.line_instruction)
 
-		def remove_arrow_and_kick_if_ball_was_touched(self, *touch):
+		def remove_arrow_and_kick_if_ball_was_touched(self, ground, platform, *touch):
 			self.ball.touch_pos = ()
 			# del(touch[1].ud['arrow'])
-			print str(self.line_instruction_group)
-			print self.arrow.canvas
-			# self.canvas.remove(line_instruction)
+			# print str(line_instruction_group)
+			# print self.arrow.canvas.children
+			# print [x.group for x in self.line_instruction_group.children]
+			self.arrow.canvas.clear()
+			self.ball.kick(ground, platform, touch)
+			# print 'childeren', [x.group for x in self.line_instruction_group.children]
+			# print str(self.line_instruction_group)
+
 
 class Ground(Widget):
 	def __init__(self, **kwargs):
@@ -139,7 +150,10 @@ class Ball(Widget):
 
 	def move_ball_if_possible(self, ground, platform, *args):
 		print self.pos, ground.size
-		self.pos = tuple(sum(x) for x in zip(self.pos, DELTA, self.gravity()))
+		print "-----velocity_unit_vector", self.velocity_unit_vector
+		delta = tuple(x[0] * x[1] for x in zip(self.velocity_unit_vector, DELTA))
+		print "--------delta", delta
+		self.pos = tuple(sum(x) for x in zip(self.pos, delta, self.gravity()))
 		# print 'collision param', self.collide_widget(ground)
 		return not (self.collide_widget(ground) or self.collide_widget(platform))
 

@@ -32,7 +32,7 @@
 	arrow: pointing_arrow
 	on_touch_down: self.save_pos_if_ball_touched(*args)
 	on_touch_move: self.show_arrow_if_ball_was_touched(*args)
-	on_touch_up: self.remove_arrow_and_kick_if_ball_was_touched(*args)
+	on_touch_up: self.remove_arrow_and_kick_if_ball_was_touched(base_ground, small_platform, *args)
 
 	Ball:
 		id: white_ball
